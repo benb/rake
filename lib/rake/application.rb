@@ -100,7 +100,7 @@ module Rake
 
     # Application options from the command line
     def options
-      @options ||= OpenStruct.new
+      @options ||= Options.new
     end
 
     # private ----------------------------------------------------------------
@@ -308,6 +308,9 @@ module Rake
           "Execute some Ruby code, then continue with normal task processing.",
           lambda { |value| eval(value) }            
         ],
+        ['--threads', '-j N', "Run up to N independent tasks simultaneously in separate threads.",
+          lambda { |value| options.threads = value.to_i }
+        ],
         ['--libdir', '-I LIBDIR', "Include LIBDIR in the search path for required modules.",
           lambda { |value| $:.push(value) }
         ],
@@ -327,6 +330,13 @@ module Rake
         ['--rakelibdir', '--rakelib', '-R RAKELIBDIR',
           "Auto-import any .rake files in RAKELIBDIR. (default is 'rakelib')",
           lambda { |value| options.rakelib = value.split(':') }
+        ],
+        ['--randomize[=SEED]', "Randomize the order of sibling prerequisites.",
+          lambda { |value|
+            options.randomize = true
+            MultiTask.class_eval { remove_method(:invoke_prerequisites) }
+            srand(value.hash) if value
+          }
         ],
         ['--require', '-r MODULE', "Require MODULE before executing rakefile.",
           lambda { |value|
@@ -556,6 +566,26 @@ module Rake
         fail
       rescue RuntimeError => ex
         ex.backtrace.find {|str| str =~ /#{@rakefile}/ } || ""
+      end
+    end
+
+    #
+    # Lazily pull in the parallelizing code
+    #
+    class Options < OpenStruct  # :nodoc:
+      attr_reader :threads
+      
+      def initialize
+        super
+        @threads = 1
+      end
+      
+      def threads=(n)
+        if n > 1 and require('rake/parallel')
+          Task.module_eval { include Parallel::TaskMixin }
+          Application.module_eval { include Parallel::ApplicationMixin }
+        end
+        @threads = n
       end
     end
   end

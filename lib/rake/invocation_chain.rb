@@ -4,6 +4,8 @@ module Rake
   # InvocationChain tracks the chain of task invocations to detect
   # circular dependencies.
   class InvocationChain
+    attr_reader :value # :nodoc:
+
     def initialize(value, tail)
       @value = value
       @tail = tail

@@ -60,16 +60,26 @@ task :tc => "test:contribs"
 task :test => "test:units"
 
 namespace :test do
-  Rake::TestTask.new(:all) do |t|
-    t.test_files = FileList[
-      'test/lib/*_test.rb',
-      'test/contrib/*_test.rb',
-      'test/functional/*_test.rb'
-    ]
+  task :all => [:serial, :parallel]
+
+  all_test_files = FileList[
+    'test/lib/*_test.rb',
+    'test/contrib/*_test.rb',
+    'test/functional/*_test.rb'
+  ]
+
+  Rake::TestTask.new(:serial) do |t|
+    t.test_files = ['test/serial_setup.rb'] + all_test_files
     t.warning = true
     t.verbose = false
   end
   
+  Rake::TestTask.new(:parallel) do |t|
+    t.test_files = ['test/parallel_setup.rb'] + all_test_files
+    t.warning = true
+    t.verbose = false
+  end
+
   Rake::TestTask.new(:units) do |t|
     t.test_files = FileList['test/lib/*_test.rb']
     t.warning = true
@@ -191,6 +201,7 @@ else
 
     #### Dependencies and requirements.
 
+    s.add_dependency('comp_tree', '>= 0.7.6')
     #s.add_dependency('log4r', '> 1.0.4')
     #s.requirements << ""
 
