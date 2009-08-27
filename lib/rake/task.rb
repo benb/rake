@@ -58,6 +58,7 @@ module Rake
     # Create a task named +task_name+ with no actions or prerequisites. Use
     # +enhance+ to add actions and prerequisites.
     def initialize(task_name, app)
+      @use_lsf=true
       @name = task_name.to_s
       @prerequisites = []
       @actions = []
@@ -212,13 +213,19 @@ module Rake
       if application.options.trace
         puts "** Execute #{name}"
       end
-      application.enhance_with_matching_rule(name) if @actions.empty?
-      @actions.each do |act|
-        case act.arity
-        when 1
-          act.call(self)
-        else
-          act.call(self, args)
+
+      if (@use_lsf && ENV['LSB_JOBNAME']!=name)
+        puts "submitting job #{name}"
+        sh "bsub -o drake.out.%J -K -J #{name} drake #{name}"
+      else
+        application.enhance_with_matching_rule(name) if @actions.empty?
+        @actions.each do |act|
+          case act.arity
+          when 1
+            act.call(self)
+          else
+            act.call(self, args)
+          end
         end
       end
     end
