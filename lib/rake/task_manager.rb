@@ -12,13 +12,31 @@ module Rake
       @rules = Array.new
       @scope = Array.new
       @last_description = nil
+      @qrule="bsub -o drake.out.%J -K"
+    end
+
+    def set_qrule(qrule)
+      @qrule=qrule
+    end
+
+    def qsub(name)
+      sh @qrule + " -J #{name} drake #{name}"
+    end
+
+    def create_rule_base(*args, &block)
+      pattern, arg_names, deps = resolve_args(args)
+      pattern = Regexp.new(Regexp.quote(pattern) + '$') if String === pattern
+      [pattern, deps, block]
     end
 
     def create_rule(*args, &block)
-      pattern, arg_names, deps = resolve_args(args)
-      pattern = Regexp.new(Regexp.quote(pattern) + '$') if String === pattern
-      @rules << [pattern, deps, block]
+      @rules << (create_rule_base(*args,&block) << false)
     end
+
+    def create_qrule(*args, &block)
+      @rules << (create_rule_base(*args,&block) << true)
+    end
+
 
     def define_task(task_class, *args, &block)
       task_name, arg_names, deps = resolve_args(args)
@@ -123,9 +141,10 @@ module Rake
     def enhance_with_matching_rule(task_name, level=0)
       fail Rake::RuleRecursionOverflowError,
         "Rule Recursion Too Deep" if level >= 16
-      @rules.each do |pattern, extensions, block|
+      @rules.each do |pattern, extensions, block, qrule|
         if md = pattern.match(task_name)
           task = attempt_rule(task_name, extensions, block, level)
+          task.enable_lsf(qrule)
           return task if task
         end
       end

@@ -55,10 +55,14 @@ module Rake
       @sources.first if defined?(@sources)
     end
 
+    def enable_lsf(bool)
+       @use_lsf = bool
+    end
+
     # Create a task named +task_name+ with no actions or prerequisites. Use
     # +enhance+ to add actions and prerequisites.
     def initialize(task_name, app)
-      @use_lsf=true
+      @use_lsf=false
       @name = task_name.to_s
       @prerequisites = []
       @actions = []
@@ -216,7 +220,7 @@ module Rake
 
       if (@use_lsf && ENV['LSB_JOBNAME']!=name)
         puts "submitting job #{name}"
-        sh "bsub -o drake.out.%J -K -J #{name} drake #{name}"
+        Rake.application.qsub(name) 
       else
         application.enhance_with_matching_rule(name) if @actions.empty?
         @actions.each do |act|
@@ -336,6 +340,9 @@ module Rake
       # Define a rule for synthesizing tasks.
       def create_rule(*args, &block)
         Rake.application.create_rule(*args, &block)
+      end
+      def create_qrule(*args, &block)
+        Rake.application.create_qrule(*args, &block)
       end
 
       # Apply the scope to the task name according to the rules for

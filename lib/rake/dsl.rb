@@ -11,6 +11,10 @@ def task(*args, &block)
   Rake::Task.define_task(*args, &block)
 end
 
+def qtask(*args, &block)
+  t = task(*args, &block)
+  t.enable_lsf(true)
+end
 
 # Declare a file task.
 #
@@ -27,6 +31,10 @@ end
 #
 def file(*args, &block)
   Rake::FileTask.define_task(*args, &block)
+end
+def qfile(*args,&block)
+   t = file(*args,&block)
+   t.enable_lsf(true)
 end
 
 # Declare a file creation task.
@@ -88,6 +96,9 @@ end
 #
 def rule(*args, &block)
   Rake::Task.create_rule(*args, &block)
+end
+def qrule(*args, &block)
+  Rake::Task.create_qrule(*args, &block)
 end
 
 # Describe the next rake task.
