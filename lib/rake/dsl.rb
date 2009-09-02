@@ -1,5 +1,13 @@
 # Rake DSL functions.
 
+#Declare the global rule used to submit jobs
+#Currently " -J #{name} drake #{name}" is appended to this
+#The default is "bsub -o drake.out.%J -K"
+#You may want to stipulate the queue you are submitting to here
+def set_qrule(command)
+        Rake.application.set_qrule(command)
+end
+
 # Declare a basic task.
 #
 # Example:
