@@ -144,7 +144,7 @@ module Rake
       @rules.each do |pattern, extensions, block, qrule|
         if md = pattern.match(task_name)
           task = attempt_rule(task_name, extensions, block, level)
-          task.enable_lsf(qrule)
+          task.enable_lsf(qrule) unless task.nil? 
           return task if task
         end
       end
